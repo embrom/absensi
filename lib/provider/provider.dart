@@ -1,7 +1,6 @@
 import 'dart:convert';
 import 'dart:io';
 import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/foundation.dart';
 
 import 'data_nipd.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
@@ -26,8 +25,8 @@ class Fungsi extends ChangeNotifier {
 
   int totalterlambat = 0;
   int totalijin = 0;
-  Future ijin(BuildContext context, String nomor, String alasan,
-      {File? buktiFoto, dynamic blob}) async {
+  Future ijin(
+      BuildContext context, String nomor, String alasan, File buktiFoto) async {
     ScaffoldMessenger.of(context).showSnackBar(SnackBar(
         duration: Duration(seconds: 10000),
         backgroundColor: Colors.green,
@@ -45,8 +44,7 @@ class Fungsi extends ChangeNotifier {
         .child(nama!)
         .child(DateTime.now().millisecond.toString() + '.jpg');
 
-    if (!kIsWeb) await ref.putFile(buktiFoto!);
-    if (kIsWeb) await ref.putBlob(blob);
+    await ref.putFile(buktiFoto);
     var imageUrl = await ref.getDownloadURL();
     await FirebaseFirestore.instance
         .collection(kelas!)
@@ -55,8 +53,7 @@ class Fungsi extends ChangeNotifier {
         .doc(nomor)
         .set({
       'presensi': 'Izin',
-      'buktiGambar': imageUrl,
-      'alasan': alasan,
+      'buktiGambar': imageUrl,'alasan':alasan,
       'waktu': DateFormat.Hm().format(DateTime.now())
     });
     await FirebaseFirestore.instance.collection(kelas!).doc(nama).update({
@@ -202,7 +199,7 @@ class Fungsi extends ChangeNotifier {
 
       var pref = await SharedPreferences.getInstance();
       var dataSiswa = json.encode({'kelas': kelas, 'nipd': nipd, 'nama': nama});
-      await pref.setString(siswa ? 'siswa' : 'wali', siswa ? dataSiswa : nipd);
+      await pref.setString(siswa ?'siswa':'wali', siswa ? dataSiswa : nipd);
       if (siswa) {
         var checkData =
             await FirebaseFirestore.instance.collection(kelas!).doc(nama).get();

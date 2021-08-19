@@ -1,14 +1,9 @@
 import 'dart:io';
-import 'dart:typed_data';
 
 import 'package:absensi/provider/provider.dart';
-import 'package:firebase_storage/firebase_storage.dart';
-import 'package:flutter/foundation.dart';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
-import 'package:image_picker_web/image_picker_web.dart';
 import 'package:provider/provider.dart';
-import 'dart:html' as html;
 
 class IzinPage extends StatefulWidget {
   final String nomor;
@@ -22,22 +17,6 @@ class _IzinPageState extends State<IzinPage> {
   File? image;
   final _controller = TextEditingController();
   String alasan = '';
-  html.File? infos;
-  _pickedweb() async {
-    // webImage =
-    //     (await ImagePickerWeb.getImage(outputType: ImageType.widget) as Image);
-    try {
-      infos = await ImagePickerWeb.getImage(outputType: ImageType.file)
-          as html.File;
-
-      setState(() {
-        pickedwebbool = true;
-      });
-    } catch (e) {
-      print(e);
-    }
-  }
-
   _pickBukti() async {
     var imagepicker = ImagePicker();
     XFile? photo = await imagepicker.pickImage(
@@ -53,8 +32,6 @@ class _IzinPageState extends State<IzinPage> {
     }
   }
 
-  bool pickedwebbool = false;
-  Image webImage = Image(image: AssetImage('assets/loading.png'));
   bool pressed = false;
   @override
   Widget build(BuildContext context) {
@@ -84,10 +61,9 @@ class _IzinPageState extends State<IzinPage> {
                     onPressed: pressed
                         ? null
                         : () async {
-                          bool asw=kIsWeb
-                                ? infos == null
-                                : image == null;
-                            if (alasan.isEmpty  ||asw ) {
+                            if (alasan.isEmpty ||
+                                alasan == '' ||
+                                image == null) {
                               ScaffoldMessenger.of(context).showSnackBar(
                                   SnackBar(
                                       backgroundColor: Colors.red,
@@ -101,14 +77,8 @@ class _IzinPageState extends State<IzinPage> {
                             setState(() {
                               pressed = true;
                             });
-                            if (kIsWeb) {
-                              await Provider.of<Fungsi>(context, listen: false)
-                                  .ijin(context, widget.nomor, alasan,
-                                      blob: infos);
-                            } else { await Provider.of<Fungsi>(context, listen: false)
-                                .ijin(context, widget.nomor, alasan,
-                                    buktiFoto: image!);}
-                           
+                            await Provider.of<Fungsi>(context, listen: false)
+                                .ijin(context, widget.nomor, alasan, image!);
                             Navigator.of(context).pop();
                           },
                     icon: Icon(Icons.send)),
@@ -126,63 +96,37 @@ class _IzinPageState extends State<IzinPage> {
       body: Align(
         alignment: Alignment.topCenter,
         child: Container(
-            width: devicewidth * 0.9,
-            height: devsiceHeight * 0.7,
-            child: kIsWeb ? buildweb() : buildPhone()),
+        
+          width: devicewidth * 0.9,
+          height: devsiceHeight * 0.7,
+          child: image != null
+              ? ClipRRect(
+                  borderRadius: BorderRadius.all(
+                    Radius.circular(20),
+                  ),
+                  child: Image.file(
+                    image!,
+                    fit: BoxFit.cover,
+                  ))
+              : Container(
+                  padding: EdgeInsets.all(50),
+                  margin: EdgeInsets.all(20),
+                  decoration:
+                      BoxDecoration(border: Border.all(color: Colors.green)),
+                  child: Column(mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      IconButton(
+                          iconSize: 100,
+                          onPressed: () {
+                            _pickBukti();
+                          },
+                          icon: Icon(Icons.camera_alt_rounded)),
+                      Text('Bukti Berupa Gambar')
+                    ],
+                  ),
+                ),
+        ),
       ),
     );
-  }
-
-  buildPhone() {
-    return image != null
-        ? ClipRRect(
-            borderRadius: BorderRadius.all(
-              Radius.circular(20),
-            ),
-            child: Image.file(
-              image!,
-              fit: BoxFit.cover,
-            ))
-        : Container(
-            padding: EdgeInsets.all(50),
-            margin: EdgeInsets.all(20),
-            decoration: BoxDecoration(border: Border.all(color: Colors.green)),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconButton(
-                    iconSize: 100,
-                    onPressed: () {
-                      _pickBukti();
-                    },
-                    icon: Icon(Icons.camera_alt_rounded)),
-                Text('Bukti Berupa Gambar')
-              ],
-            ));
-  }
-
-  buildweb() {
-    return pickedwebbool == true
-        ? ClipRRect(
-            borderRadius: BorderRadius.all(
-              Radius.circular(20),
-            ),
-            child: Icon(Icons.done_all,size: 60,color: Colors.green,))
-        : Container(
-            padding: EdgeInsets.all(50),
-            margin: EdgeInsets.all(20),
-            decoration: BoxDecoration(border: Border.all(color: Colors.green)),
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                IconButton(
-                    iconSize: 100,
-                    onPressed: () {
-                      _pickedweb();
-                    },
-                    icon: Icon(Icons.camera_alt_rounded)),
-                Text('Bukti Berupa Gambar')
-              ],
-            ));
   }
 }
